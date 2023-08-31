@@ -1,0 +1,1 @@
+pyinstaller actionlogger.py --noconfirm --windowed --icon=favicon.ico
