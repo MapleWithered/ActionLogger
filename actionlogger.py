@@ -39,9 +39,18 @@ def logging_thread():
     time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     logging.info(f"{time_str} Application started.")
 
+    file_name = time.strftime("%Y-%m-%d", time.localtime())
+
     prev_window_title = None
     prev_window_process_name = None
     while running:
+        if file_name != time.strftime("%Y-%m-%d", time.localtime()):
+            time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            logging.info(f"{time_str} Passing to new log file.")
+            file_name = time.strftime("%Y-%m-%d", time.localtime())
+            logging.basicConfig(filename=f'C:/temp/action_log/{file_name}.log',
+                                level=logging.INFO,
+                                format='%(message)s', encoding='utf-8')
         active_window_process_name, pid, active_window_title = get_active_window()
         if active_window_title != prev_window_title:
             prev_window_title = active_window_title
