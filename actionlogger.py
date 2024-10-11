@@ -50,7 +50,7 @@ def logging_thread():
             file_name = time.strftime("%Y-%m-%d", time.localtime())
             logging.basicConfig(filename=f'C:/temp/action_log/{file_name}.log',
                                 level=logging.INFO,
-                                format='%(message)s', encoding='utf-8')
+                                format='%(message)s', encoding='gbk', force=True)
         active_window_process_name, pid, active_window_title = get_active_window()
         if active_window_title != prev_window_title:
             prev_window_title = active_window_title
@@ -72,7 +72,8 @@ def main():
 
             logging.basicConfig(filename=f'C:/temp/action_log/{time.strftime("%Y-%m-%d", time.localtime())}.log',
                                 level=logging.INFO,
-                                format='%(message)s', encoding='utf-8')
+                                format='%(message)s',
+                                encoding='gbk')
 
             image = Image.open("favicon.ico")
             menu = (item('Show Log', show_log), item('Quit', quit_window))
