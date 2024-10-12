@@ -22,22 +22,34 @@ focus_mode = False
 running = None
 icon: Optional[pystray.Icon] = None
 
-# regex for process name and window title. If both match, consider it as a time-wasting app
-blacklist = [
-    # 微信 : nproc = WeChat.exe and title any
-    (r"WeChat\.exe", r".*"),
-    # 小红书 : nproc = firefox.exe and title contains "小红书"
-    (r"firefox\.exe", r".*小红书.*"),
-    # 知乎 : nproc = firefox.exe and title contains "知乎"
-    (r"firefox\.exe", r".*知乎.*"),
-    # QQ : nproc = QQ.exe and title any
-    (r"QQ\.exe", r".*"),
-    # CS2 : nproc = cs2.exe and title any
-    (r"cs2\.exe", r".*"),
-]
+current_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 
-ignorelist = [
-]
+# regex for process name and window title. If both match, consider it as a time-wasting app
+blacklist = []
+try:
+    with open(os.path.join(current_path, 'blacklist.py'), 'r', encoding='utf-8') as f:
+        exec(f.read(), globals())
+except:
+    notify('ActionLogger', '未找到定义分心黑名单应用的规则脚本', duration='long')
+    blacklist = [
+        # 微信 : nproc = WeChat.exe and title any
+        (r"WeChat\.exe", r".*"),
+        # 小红书 : nproc = firefox.exe and title contains "小红书"
+        (r"firefox\.exe", r".*小红书.*"),
+        # 知乎 : nproc = firefox.exe and title contains "知乎"
+        (r"firefox\.exe", r".*知乎.*"),
+        # QQ : nproc = QQ.exe and title any
+        (r"QQ\.exe", r".*"),
+        # CS2 : nproc = cs2.exe and title any
+        (r"cs2\.exe", r".*"),
+    ]
+
+try:
+    with open(os.path.join(current_path, "config.txt"), "r", encoding='utf-8-sig') as f:
+        log_path = f.read().strip()
+except:
+    notify('ActionLogger', '未找到定义日志目录位置的配置文件', duration='long')
+    log_path = os.path.join(current_path, "logs")
 
 
 def quit_window(icon, item):
@@ -45,7 +57,8 @@ def quit_window(icon, item):
 
 
 def show_log(icon, item):
-    os.system(f'code C:/temp/action_log/{time.strftime("%Y-%m-%d", time.localtime())}.log')
+    # os.system(f'code {log_path}/{time.strftime("%Y-%m-%d", time.localtime())}.log')
+    os.system(f'code {log_path}')
 
 
 def get_active_window():
@@ -93,9 +106,10 @@ def logging_thread():
             time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             logging.info(f"{time_str} Passing to new log file.")
             file_name = time.strftime("%Y-%m-%d", time.localtime())
-            logging.basicConfig(filename=f'C:/temp/action_log/{file_name}.log',
+            logging.basicConfig(filename=f'{log_path}/{file_name}.log',
                                 level=logging.INFO,
                                 format='%(message)s', encoding='utf-8', force=True)
+            logging.info(f"{time_str} Passing to new log file.")
 
         # 5 minute before the every 30 minute to-do request, remind the user to update the timetable
         if time.time() - last_todo_set > 25 * 60 and time.time() - last_timetable_update > 60 * 30:
@@ -121,11 +135,11 @@ def logging_thread():
                     result['user_input']['小目标']:
                 last_todo_set = time.time()
                 todo_task = result['user_input']['小目标']
+                logging.info(f"{time_str} Set to-do: {todo_task}")
             elif 'arguments' in result and result['arguments'] == 'http:':
                 last_todo_set = time.time() - 60 * 30
             else:
                 last_todo_set = time.time() - 60 * 28
-
 
         prev_window_title = active_window_title
         prev_window_process_name = active_window_process_name
@@ -202,20 +216,22 @@ def logging_thread():
                     }, scenario='incomingCall', tag='focus_killer')
                 else:
                     update_progress(
-                        {'value': str(sec_passed / 70), 'valueStringOverride': f'{int(70 - sec_passed)} sec'}, tag='focus_killer')
+                        {'value': str(sec_passed / 70), 'valueStringOverride': f'{int(70 - sec_passed)} sec'},
+                        tag='focus_killer')
 
         else:
             # Focus mode is disabled
             # Remind the user to do the to-do after 2 min of no switching, and every 5 min after the first reminder
             if last_blacklist_reminder is None and time.time() - last_blacklist_start > 23:
                 last_blacklist_reminder = time.time()
-                notify('你在 做什么', f'还在为 {todo_task} 努力吗？', duration='long', audio={'silent': 'true'}, tag='focus_reminder')
+                notify('你在 做什么', f'还在为 {todo_task} 努力吗？', duration='long', audio={'silent': 'true'},
+                       tag='focus_reminder')
             elif last_blacklist_reminder is not None and time.time() - last_blacklist_reminder > 180:
                 last_blacklist_reminder = time.time()
-                notify('你在 做什么', f'还在为 {todo_task} 努力吗？', duration='long', audio={'silent': 'true'}, tag='focus_reminder')
+                notify('你在 做什么', f'还在为 {todo_task} 努力吗？', duration='long', audio={'silent': 'true'},
+                       tag='focus_reminder')
 
         time.sleep(1)
-
 
 
 def switch_focus_mode(icon, item):
@@ -232,15 +248,15 @@ def main():
     counter = 0
     while True:
         try:
-            if not os.path.exists(f'C:/temp/action_log'):
-                os.makedirs(f'C:/temp/action_log')
+            if not os.path.exists(f'{log_path}'):
+                os.makedirs(f'{log_path}')
 
-            logging.basicConfig(filename=f'C:/temp/action_log/{time.strftime("%Y-%m-%d", time.localtime())}.log',
+            logging.basicConfig(filename=f'{log_path}/{time.strftime("%Y-%m-%d", time.localtime())}.log',
                                 level=logging.INFO,
                                 format='%(message)s',
                                 encoding='utf-8')
 
-            image = Image.open("favicon.ico")
+            image = Image.open(os.path.join(current_path, "favicon.ico"))
             menu = (pystray.MenuItem("Focus Mode", action=switch_focus_mode, checked=lambda i: focus_mode),
                     pystray.MenuItem('Show Log', show_log), pystray.MenuItem('Quit', quit_window))
             icon = pystray.Icon("ActionLogger", image, "Tray Icon", menu)
