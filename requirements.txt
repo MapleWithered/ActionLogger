@@ -3,3 +3,4 @@ psutil~=5.9.8
 pyinstaller
 pystray~=0.19.5
 pillow~=10.3.0
+win11toast
