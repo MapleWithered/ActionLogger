@@ -65,7 +65,7 @@ blacklist = [
 
 在安装目录下的config.txt中修改日志目录。该文件默认使用UTF-8 with BOM编码。
 
-4. 卸载
+6. 卸载
 
 ```bash
 .\uninstaller.ps1
